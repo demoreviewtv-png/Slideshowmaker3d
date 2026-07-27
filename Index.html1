@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Slideshow Maker with PPTX & Google Slides Export</title>
+    <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --panel-bg: #1e293b;
+            --accent: #38bdf8;
+            --accent-hover: #0ea5e9;
+            --text-color: #f8fafc;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            color: var(--accent);
+            margin-bottom: 5px;
+        }
+
+        header p {
+            font-size: 0.95rem;
+            color: #94a3b8;
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+            flex: 1;
+        }
+
+        @media (max-width: 900px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card h2 {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #334155;
+            padding-bottom: 8px;
+        }
+
+        /* Editor Section */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+            color: #cbd5e1;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            background-color: #0f172a;
+            border: 1px solid #475569;
+            border-radius: 6px;
+            color: white;
+            font-size: 0.95rem;
+        }
+
+        textarea {
+            resize: vertical;
+            height: 80px;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .btn-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        button {
+            flex: 1;
+            background-color: var(--accent);
+            color: #0f172a;
+            border: none;
+            padding: 10px 15px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--accent-hover);
+        }
+
+        button.secondary {
+            background-color: #475569;
+            color: white;
+        }
+
+        button.secondary:hover {
+            background-color: #64748b;
+        }
+
+        /* Slide Manager List */
+        .slide-list {
+            flex: 1;
+            overflow-y: auto;
+            max-height: 180px;
+            margin-top: 10px;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 5px;
+        }
+
+        .slide-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #0f172a;
+            padding: 8px 12px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .slide-item button {
+            background: #ef4444;
+            color: white;
+            padding: 4px 8px;
+            font-size: 0.8rem;
+            flex: none;
+        }
+
+        /* 3D Stage Preview */
+        .stage-wrapper {
+            perspective: 1000px;
+            width: 100%;
+            height: 300px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #090d16;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .slide-cube {
+            width: 80%;
+            height: 80%;
+            position: absolute;
+            transform-style: preserve-3d;
+            transition: transform 0.8s cubic-bezier(0.77, 0, 0.175, 1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .slide-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1e293b, #334155);
+            border: 2px solid var(--accent);
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            backface-visibility: hidden;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        .slide-face h3 {
+            color: var(--accent);
+            margin-bottom: 10px;
+            font-size: 1.4rem;
+        }
+
+        .slide-face p {
+            font-size: 1rem;
+            color: #cbd5e1;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .export-section {
+            margin-top: auto;
+            border-top: 2px solid #334155;
+            padding-top: 15px;
+        }
+
+        .export-btn {
+            background-color: #10b981;
+            color: white;
+            width: 100%;
+            font-size: 1rem;
+            padding: 12px;
+        }
+
+        .export-btn:hover {
+            background-color: #059669;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>3D HTML Slideshow Maker</h1>
+        <p>Build slides with a 3D perspective preview and export directly to PowerPoint (.pptx) & Google Slides ready format!</p>
+    </header>
+
+    <div class="main-container">
+        <div class="card">
+            <h2>Slide Content Editor</h2>
+            <div class="form-group">
+                <label for="slideTitle">Slide Title</label>
+                <input type="text" id="slideTitle" placeholder="e.g., Introduction to WebGL">
+            </div>
+            <div class="form-group">
+                <label for="slideText">Slide Description / Bullet Points</label>
+                <textarea id="slideText" placeholder="Enter slide text details..."></textarea>
+            </div>
+            <div class="btn-container">
+                <button id="addSlideBtn">Add Slide</button>
+            </div>
+
+            <h2 style="margin-top: 20px;">Current Slides (<span id="slideCount">0</span>)</h2>
+            <div class="slide-list" id="slideListContainer">
+                </div>
+        </div>
+
+        <div class="card">
+            <h2>3D Interactive Preview</h2>
+            <div class="stage-wrapper">
+                <div class="slide-cube" id="previewCube">
+                    <div class="slide-face">
+                        <h3>Welcome!</h3>
+                        <p>Add your first slide to start previewing in 3D space.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="controls">
+                <button class="secondary" id="prevBtn">&larr; Previous</button>
+                <button class="secondary" id="nextBtn">Next &rarr;</button>
+            </div>
+
+            <div class="export-section">
+                <h2>Export Presentation</h2>
+                <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 10px;">
+                    Downloads a native <code>.pptx</code> file. You can open it directly in Microsoft PowerPoint or upload it straight into <strong>Google Slides</strong> (File &gt; Import slides).
+                </p>
+                <button class="export-btn" id="exportPptxBtn">Download .PPTX / Google Slides File</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State Management
+        let slides = [
+            { title: "Welcome to 3D Slides", text: "Add your first slide on the left panel to begin crafting your presentation." }
+        ];
+        let currentIndex = 0;
+        let currentRotation = 0;
+
+        // DOM Elements
+        const slideTitleInput = document.getElementById('slideTitle');
+        const slideTextInput = document.getElementById('slideText');
+        const addSlideBtn = document.getElementById('addSlideBtn');
+        const slideListContainer = document.getElementById('slideListContainer');
+        const slideCountEl = document.getElementById('slideCount');
+        const previewCube = document.getElementById('previewCube');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const exportPptxBtn = document.getElementById('exportPptxBtn');
+
+        // Render UI state
+        function updateUI() {
+            slideCountEl.textContent = slides.length;
+            slideListContainer.innerHTML = '';
+
+            slides.forEach((slide, index) => {
+                const item = document.createElement('div');
+                item.className = 'slide-item';
+                item.innerHTML = `
+                    <span><strong>#${index + 1}</strong>: ${slide.title}</span>
+                    <button onclick="removeSlide(${index})">Delete</button>
+                `;
+                slideListContainer.appendChild(item);
+            });
+
+            renderPreview();
+        }
+
+        // Render 3D Preview Card
+        function renderPreview() {
+            if (slides.length === 0) {
+                previewCube.innerHTML = `<div class="slide-face"><h3>Empty Deck</h3><p>No slides available.</p></div>`;
+                return;
+            }
+
+            const current = slides[currentIndex];
+            previewCube.innerHTML = `
+                <div class="slide-face">
+                    <h3>${escapeHtml(current.title)}</h3>
+                    <p>${escapeHtml(current.text)}</p>
+                </div>
+            `;
+            previewCube.style.transform = `rotateY(${currentRotation}deg)`;
+        }
+
+        // Add Slide Event
+        addSlideBtn.addEventListener('click', () => {
+            const title = slideTitleInput.value.trim();
+            const text = slideTextInput.value.trim();
+
+            if (!title) {
+                alert("Please provide a slide title.");
+                return;
+            }
+
+            slides.push({ title, text: text || "" });
+            slideTitleInput.value = '';
+            slideTextInput.value = '';
+            
+            currentIndex = slides.length - 1;
+            currentRotation = currentIndex * 90;
+            updateUI();
+        });
+
+        // Remove Slide Helper
+        window.removeSlide = function(index) {
+            slides.splice(index, 1);
+            if (currentIndex >= slides.length) {
+                currentIndex = Math.max(0, slides.length - 1);
+            }
+            currentRotation = currentIndex * 90;
+            updateUI();
+        }
+
+        // Carousel controls with 3D turns
+        prevBtn.addEventListener('click', () => {
+            if (slides.length === 0) return;
+            currentIndex = (currentIndex - 1 + slides.length) % slides.length;
+            currentRotation -= 90;
+            renderPreview();
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (slides.length === 0) return;
+            currentIndex = (currentIndex + 1) % slides.length;
+            currentRotation += 90;
+            renderPreview();
+        });
+
+        // Export to .pptx (Fully compatible with Google Slides import)
+        exportPptxBtn.addEventListener('click', () => {
+            if (slides.length === 0) {
+                alert("There are no slides to export!");
+                return;
+            }
+
+            let pptx = new PptxGenJS();
+
+            slides.forEach(slideData => {
+                let slide = pptx.addSlide();
+                
+                // Add background color styling
+                slide.background = { color: "0F172A" };
+
+                // Add Title Box
+                slide.addText(slideData.title, {
+                    x: 0.8,
+                    y: 1.0,
+                    w: "80%",
+                    h: 1.0,
+                    fontSize: 28,
+                    bold: true,
+                    color: "38BDF8"
+                });
+
+                // Add Text Box Content
+                if (slideData.text) {
+                    slide.addText(slideData.text, {
+                        x: 0.8,
+                        y: 2.2,
+                        w: "80%",
+                        h: 3.5,
+                        fontSize: 18,
+                        color: "F8FAFC",
+                        valign: "top"
+                    });
+                }
+            });
+
+            // Save Presentation file trigger
+            pptx.writeFile({ fileName: "3d-slideshow-presentation.pptx" })
+                .catch(err => {
+                    console.error("Export error:", err);
+                    alert("An error occurred while generating the file.");
+                });
+        });
+
+        // Helper to prevent HTML injection in preview
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        // Initial render setup
+        updateUI();
+    </script>
+</body>
+</html>
