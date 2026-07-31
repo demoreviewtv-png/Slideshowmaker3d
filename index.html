@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Slideshow Maker with PPTX & Google Slides Export</title>
+    <title>3D Scene Snapshot to Slideshow</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
     <style>
         :root {
@@ -43,7 +45,7 @@
         }
 
         header p {
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             color: #94a3b8;
         }
 
@@ -72,37 +74,60 @@
         }
 
         .card h2 {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             margin-bottom: 15px;
             border-bottom: 2px solid #334155;
             padding-bottom: 8px;
         }
 
-        /* Editor Section */
-        .form-group {
+        /* 3D Viewport */
+        #viewport {
+            width: 100%;
+            height: 320px;
+            background: #000;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
             margin-bottom: 15px;
+        }
+
+        .viewport-instructions {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            color: #cbd5e1;
+            padding: 5px 10px;
+            font-size: 0.75rem;
+            border-radius: 4px;
+            pointer-events: none;
+        }
+
+        /* Form Inputs */
+        .form-group {
+            margin-bottom: 12px;
         }
 
         label {
             display: block;
             font-size: 0.85rem;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
             color: #cbd5e1;
         }
 
         input, textarea {
             width: 100%;
-            padding: 10px;
+            padding: 8px 10px;
             background-color: #0f172a;
             border: 1px solid #475569;
             border-radius: 6px;
             color: white;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
         }
 
         textarea {
             resize: vertical;
-            height: 80px;
+            height: 60px;
         }
 
         input:focus, textarea:focus {
@@ -110,14 +135,7 @@
             border-color: var(--accent);
         }
 
-        .btn-container {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
         button {
-            flex: 1;
             background-color: var(--accent);
             color: #0f172a;
             border: none;
@@ -125,6 +143,7 @@
             font-weight: bold;
             border-radius: 6px;
             cursor: pointer;
+            width: 100%;
             transition: background 0.2s;
         }
 
@@ -132,20 +151,11 @@
             background-color: var(--accent-hover);
         }
 
-        button.secondary {
-            background-color: #475569;
-            color: white;
-        }
-
-        button.secondary:hover {
-            background-color: #64748b;
-        }
-
-        /* Slide Manager List */
+        /* Slide List Container */
         .slide-list {
             flex: 1;
             overflow-y: auto;
-            max-height: 180px;
+            max-height: 140px;
             margin-top: 10px;
             border: 1px solid #334155;
             border-radius: 6px;
@@ -157,90 +167,24 @@
             justify-content: space-between;
             align-items: center;
             background-color: #0f172a;
-            padding: 8px 12px;
+            padding: 6px 10px;
             margin-bottom: 5px;
             border-radius: 4px;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
 
         .slide-item button {
             background: #ef4444;
             color: white;
-            padding: 4px 8px;
-            font-size: 0.8rem;
-            flex: none;
-        }
-
-        /* 3D Stage Preview */
-        .stage-wrapper {
-            perspective: 1000px;
-            width: 100%;
-            height: 300px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: #090d16;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .slide-cube {
-            width: 80%;
-            height: 80%;
-            position: absolute;
-            transform-style: preserve-3d;
-            transition: transform 0.8s cubic-bezier(0.77, 0, 0.175, 1);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .slide-face {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #1e293b, #334155);
-            border: 2px solid var(--accent);
-            border-radius: 8px;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            backface-visibility: hidden;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
-        }
-
-        .slide-face h3 {
-            color: var(--accent);
-            margin-bottom: 10px;
-            font-size: 1.4rem;
-        }
-
-        .slide-face p {
-            font-size: 1rem;
-            color: #cbd5e1;
-        }
-
-        .controls {
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
-        }
-
-        .export-section {
-            margin-top: auto;
-            border-top: 2px solid #334155;
-            padding-top: 15px;
+            width: auto;
+            padding: 2px 6px;
+            font-size: 0.75rem;
         }
 
         .export-btn {
             background-color: #10b981;
             color: white;
-            width: 100%;
+            margin-top: auto;
             font-size: 1rem;
             padding: 12px;
         }
@@ -253,208 +197,230 @@
 <body>
 
     <header>
-        <h1>3D HTML Slideshow Maker</h1>
-        <p>Build slides with a 3D perspective preview and export directly to PowerPoint (.pptx) & Google Slides ready format!</p>
+        <h1>3D Scene Snapshot to Slideshow</h1>
+        <p>Position your 3D view, snap a picture from that exact spot, and build a presentation deck!</p>
     </header>
 
     <div class="main-container">
         <div class="card">
-            <h2>Slide Content Editor</h2>
-            <div class="form-group">
-                <label for="slideTitle">Slide Title</label>
-                <input type="text" id="slideTitle" placeholder="e.g., Introduction to WebGL">
+            <h2>3D Scene Viewport</h2>
+            <div id="viewport">
+                <div class="viewport-instructions">Drag to Rotate | Scroll to Zoom</div>
             </div>
-            <div class="form-group">
-                <label for="slideText">Slide Description / Bullet Points</label>
-                <textarea id="slideText" placeholder="Enter slide text details..."></textarea>
-            </div>
-            <div class="btn-container">
-                <button id="addSlideBtn">Add Slide</button>
-            </div>
-
-            <h2 style="margin-top: 20px;">Current Slides (<span id="slideCount">0</span>)</h2>
-            <div class="slide-list" id="slideListContainer">
+            
+            <div class="form-group" style="margin-top: 5px;">
+                <label for="shapeSelect">Add Object to Scene</label>
+                <div style="display: flex; gap: 8px;">
+                    <select id="shapeSelect" style="flex:1; padding: 8px; background: #0f172a; color: white; border: 1px solid #475569; border-radius: 6px;">
+                        <option value="cube">Cube</option>
+                        <option value="sphere">Sphere</option>
+                        <option value="torus">Torus (Donut)</option>
+                        <option value="cone">Cone</option>
+                    </select>
+                    <button id="addObjectBtn" style="width: auto; padding: 8px 15px;">Add</button>
                 </div>
+            </div>
         </div>
 
         <div class="card">
-            <h2>3D Interactive Preview</h2>
-            <div class="stage-wrapper">
-                <div class="slide-cube" id="previewCube">
-                    <div class="slide-face">
-                        <h3>Welcome!</h3>
-                        <p>Add your first slide to start previewing in 3D space.</p>
-                    </div>
-                </div>
+            <h2>Capture Slide Snapshot</h2>
+            <div class="form-group">
+                <label for="slideTitle">Slide Title</label>
+                <input type="text" id="slideTitle" placeholder="e.g., Front Perspective View">
             </div>
-            <div class="controls">
-                <button class="secondary" id="prevBtn">&larr; Previous</button>
-                <button class="secondary" id="nextBtn">Next &rarr;</button>
+            <div class="form-group">
+                <label for="slideText">Slide Notes / Description</label>
+                <textarea id="slideText" placeholder="Describe this specific scene perspective..."></textarea>
             </div>
+            <button id="captureBtn">Snap & Add to Deck</button>
 
-            <div class="export-section">
-                <h2>Export Presentation</h2>
-                <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 10px;">
-                    Downloads a native <code>.pptx</code> file. You can open it directly in Microsoft PowerPoint or upload it straight into <strong>Google Slides</strong> (File &gt; Import slides).
-                </p>
-                <button class="export-btn" id="exportPptxBtn">Download .PPTX / Google Slides File</button>
-            </div>
+            <h2 style="margin-top: 15px;">Captured Deck Slides (<span id="slideCount">0</span>)</h2>
+            <div class="slide-list" id="slideListContainer">
+                </div>
+
+            <button class="export-btn" id="exportBtn" style="margin-top: 15px;">Download .PPTX / Google Slides File</button>
         </div>
     </div>
 
     <script>
-        // State Management
-        let slides = [
-            { title: "Welcome to 3D Slides", text: "Add your first slide on the left panel to begin crafting your presentation." }
-        ];
-        let currentIndex = 0;
-        let currentRotation = 0;
+        // --- 1. THREE.JS SCENE SETUP ---
+        const viewport = document.getElementById('viewport');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0b0f19);
 
-        // DOM Elements
+        const camera = new THREE.PerspectiveCamera(45, viewport.clientWidth / viewport.clientHeight, 0.1, 1000);
+        camera.position.set(4, 3, 5);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+        renderer.setSize(viewport.clientWidth, viewport.clientHeight);
+        viewport.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(5, 10, 7);
+        scene.add(dirLight);
+
+        // Add a grid floor helper
+        const gridHelper = new THREE.GridHelper(10, 10, 0x38bdf8, 0x334155);
+        scene.add(gridHelper);
+
+        // Default initial object
+        const defaultGeometry = new THREE.BoxGeometry(1.5, 1.5, 1.5);
+        const defaultMaterial = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.3 });
+        const defaultMesh = new THREE.Mesh(defaultGeometry, defaultMaterial);
+        defaultMesh.position.y = 0.75;
+        scene.add(defaultMesh);
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // Handle window resizing for viewport
+        window.addEventListener('resize', () => {
+            camera.aspect = viewport.clientWidth / viewport.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(viewport.clientWidth, viewport.clientHeight);
+        });
+
+        // --- 2. OBJECT GENERATOR LOGIC ---
+        document.getElementById('addObjectBtn').addEventListener('click', () => {
+            const type = document.getElementById('shapeSelect').value;
+            let geometry;
+            
+            if (type === 'cube') geometry = new THREE.BoxGeometry(1.2, 1.2, 1.2);
+            else if (type === 'sphere') geometry = new THREE.SphereGeometry(0.8, 32, 32);
+            else if (type === 'torus') geometry = new THREE.TorusGeometry(0.8, 0.3, 16, 100);
+            else if (type === 'cone') geometry = new THREE.ConeGeometry(0.8, 1.5, 32);
+
+            const randomColor = Math.random() * 0xffffff;
+            const material = new THREE.MeshStandardMaterial({ color: randomColor, roughness: 0.4 });
+            const mesh = new THREE.Mesh(geometry, material);
+
+            // Randomize position slightly near center
+            mesh.position.set((Math.random() - 0.5) * 3, 1, (Math.random() - 0.5) * 3);
+            scene.add(mesh);
+        });
+
+        // --- 3. SLIDE CAPTURE STATE ---
+        let capturedSlides = [];
+
         const slideTitleInput = document.getElementById('slideTitle');
         const slideTextInput = document.getElementById('slideText');
-        const addSlideBtn = document.getElementById('addSlideBtn');
         const slideListContainer = document.getElementById('slideListContainer');
         const slideCountEl = document.getElementById('slideCount');
-        const previewCube = document.getElementById('previewCube');
-        const prevBtn = document.getElementById('prevBtn');
-        const nextBtn = document.getElementById('nextBtn');
-        const exportPptxBtn = document.getElementById('exportPptxBtn');
 
-        // Render UI state
         function updateUI() {
-            slideCountEl.textContent = slides.length;
+            slideCountEl.textContent = capturedSlides.length;
             slideListContainer.innerHTML = '';
 
-            slides.forEach((slide, index) => {
+            capturedSlides.forEach((slide, index) => {
                 const item = document.createElement('div');
                 item.className = 'slide-item';
                 item.innerHTML = `
-                    <span><strong>#${index + 1}</strong>: ${slide.title}</span>
-                    <button onclick="removeSlide(${index})">Delete</button>
+                    <span><strong>#${index + 1}</strong>: ${escapeHtml(slide.title)}</span>
+                    <button onclick="removeSlide(${index})">X</button>
                 `;
                 slideListContainer.appendChild(item);
             });
-
-            renderPreview();
         }
 
-        // Render 3D Preview Card
-        function renderPreview() {
-            if (slides.length === 0) {
-                previewCube.innerHTML = `<div class="slide-face"><h3>Empty Deck</h3><p>No slides available.</p></div>`;
-                return;
-            }
-
-            const current = slides[currentIndex];
-            previewCube.innerHTML = `
-                <div class="slide-face">
-                    <h3>${escapeHtml(current.title)}</h3>
-                    <p>${escapeHtml(current.text)}</p>
-                </div>
-            `;
-            previewCube.style.transform = `rotateY(${currentRotation}deg)`;
-        }
-
-        // Add Slide Event
-        addSlideBtn.addEventListener('click', () => {
+        document.getElementById('captureBtn').addEventListener('click', () => {
             const title = slideTitleInput.value.trim();
             const text = slideTextInput.value.trim();
 
             if (!title) {
-                alert("Please provide a slide title.");
+                alert("Please provide a title for this slide snapshot.");
                 return;
             }
 
-            slides.push({ title, text: text || "" });
+            // Force render current camera state to canvas buffer
+            renderer.render(scene, camera);
+            // Grab image screenshot as base64 data URL
+            const imageDataUrl = renderer.domElement.toDataURL("image/png");
+
+            capturedSlides.push({
+                title,
+                text: text || "",
+                image: imageDataUrl
+            });
+
             slideTitleInput.value = '';
             slideTextInput.value = '';
-            
-            currentIndex = slides.length - 1;
-            currentRotation = currentIndex * 90;
             updateUI();
         });
 
-        // Remove Slide Helper
         window.removeSlide = function(index) {
-            slides.splice(index, 1);
-            if (currentIndex >= slides.length) {
-                currentIndex = Math.max(0, slides.length - 1);
-            }
-            currentRotation = currentIndex * 90;
+            capturedSlides.splice(index, 1);
             updateUI();
         }
 
-        // Carousel controls with 3D turns
-        prevBtn.addEventListener('click', () => {
-            if (slides.length === 0) return;
-            currentIndex = (currentIndex - 1 + slides.length) % slides.length;
-            currentRotation -= 90;
-            renderPreview();
-        });
-
-        nextBtn.addEventListener('click', () => {
-            if (slides.length === 0) return;
-            currentIndex = (currentIndex + 1) % slides.length;
-            currentRotation += 90;
-            renderPreview();
-        });
-
-        // Export to .pptx (Fully compatible with Google Slides import)
-        exportPptxBtn.addEventListener('click', () => {
-            if (slides.length === 0) {
-                alert("There are no slides to export!");
+        // --- 4. EXPORT TO PPTX / GOOGLE SLIDES ---
+        document.getElementById('exportBtn').addEventListener('click', () => {
+            if (capturedSlides.length === 0) {
+                alert("Capture at least one 3D slide snapshot before exporting!");
                 return;
             }
 
             let pptx = new PptxGenJS();
 
-            slides.forEach(slideData => {
+            capturedSlides.forEach(slideData => {
                 let slide = pptx.addSlide();
-                
-                // Add background color styling
                 slide.background = { color: "0F172A" };
 
-                // Add Title Box
+                // Add Title
                 slide.addText(slideData.title, {
                     x: 0.8,
-                    y: 1.0,
+                    y: 0.5,
                     w: "80%",
-                    h: 1.0,
-                    fontSize: 28,
+                    h: 0.8,
+                    fontSize: 24,
                     bold: true,
                     color: "38BDF8"
                 });
 
-                // Add Text Box Content
+                // Add the 3D Snapshot Image rendered from the exact camera view
+                slide.addImage({
+                    data: slideData.image,
+                    x: 0.8,
+                    y: 1.4,
+                    w: 5.5,
+                    h: 3.3
+                });
+
+                // Add Description Text Box next to/below image
                 if (slideData.text) {
                     slide.addText(slideData.text, {
-                        x: 0.8,
-                        y: 2.2,
-                        w: "80%",
-                        h: 3.5,
-                        fontSize: 18,
+                        x: 6.6,
+                        y: 1.4,
+                        w: 5.5,
+                        h: 3.3,
+                        fontSize: 15,
                         color: "F8FAFC",
                         valign: "top"
                     });
                 }
             });
 
-            // Save Presentation file trigger
-            pptx.writeFile({ fileName: "3d-slideshow-presentation.pptx" })
+            pptx.writeFile({ fileName: "3d-scene-presentation.pptx" })
                 .catch(err => {
                     console.error("Export error:", err);
-                    alert("An error occurred while generating the file.");
+                    alert("An error occurred during export.");
                 });
         });
 
-        // Helper to prevent HTML injection in preview
         function escapeHtml(str) {
             return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         }
-
-        // Initial render setup
-        updateUI();
     </script>
 </body>
 </html>
